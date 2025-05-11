@@ -16,6 +16,7 @@
       align-items: center;
       height: 100vh;
       text-align: center;
+      overflow: hidden;
     }
     .clock {
       font-size: 5rem;
@@ -38,8 +39,26 @@
     }
     .progress-bar {
       height: 100%;
-      background-color: black;
       width: 0%;
+      background-image: linear-gradient(to right, #333, #999);
+    }
+    .fullscreen-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 8px;
+      background-color: #333;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 1.5rem;
+      line-height: 1;
+      cursor: pointer;
+      opacity: 0.7;
+      transition: opacity 0.2s ease;
+    }
+    .fullscreen-btn:hover {
+      opacity: 1;
     }
   </style>
 </head>
@@ -47,13 +66,14 @@
   <div class="clock" id="clock"></div>
   <div class="date" id="date"></div>
   <div class="progress-container">
-    <div class="progress">
+    <div class="progress" id="dayProgressBar">
       <div class="progress-bar" id="dayProgress"></div>
     </div>
-    <div class="progress">
+    <div class="progress" id="yearProgressBar">
       <div class="progress-bar" id="yearProgress"></div>
     </div>
   </div>
+  <button id="fsBtn" class="fullscreen-btn" aria-label="Toggle fullscreen">⛶</button>
 
   <script>
     function updateClock() {
@@ -69,14 +89,22 @@
       const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const endOfDay = new Date(startOfDay);
       endOfDay.setDate(endOfDay.getDate() + 1);
-      const dayProgress = (now - startOfDay) / (endOfDay - startOfDay) * 100;
-      document.getElementById("dayProgress").style.width = `${dayProgress}%`;
+      const dayProgressValue = (now - startOfDay) / (endOfDay - startOfDay) * 100;
+      document.getElementById("dayProgress").style.width = `${dayProgressValue}%`;
 
       const startOfYear = new Date(now.getFullYear(), 0, 1);
       const endOfYear = new Date(now.getFullYear() + 1, 0, 1);
-      const yearProgress = (now - startOfYear) / (endOfYear - startOfYear) * 100;
-      document.getElementById("yearProgress").style.width = `${yearProgress}%`;
+      const yearProgressValue = (now - startOfYear) / (endOfYear - startOfYear) * 100;
+      document.getElementById("yearProgress").style.width = `${yearProgressValue}%`;
     }
+
+    document.getElementById('fsBtn').addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    });
 
     setInterval(updateClock, 1000);
     updateClock();
