@@ -19,7 +19,9 @@
       height: 100vh;
       text-align: center;
       overflow: hidden;
+      cursor: default;
     }
+    body.hide-cursor { cursor: none; }
     .clock {
       font-size: 8rem;
       font-weight: 700;
@@ -27,6 +29,12 @@
     .date {
       font-size: 2rem;
       margin-top: 0.5rem;
+    }
+    .makassar-clock {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      font-size: 1.5rem;
     }
     .progress-container {
       width: 80%;
@@ -44,72 +52,66 @@
       width: 0%;
       background-image: linear-gradient(to right, #ccc, #555);
     }
-    .fullscreen-btn {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      padding: 10px;
-      background-color: #fff;
-      color: #000;
-      border: none;
-      border-radius: 5px;
-      font-size: 1.5rem;
-      line-height: 1;
-      cursor: pointer;
-      opacity: 0.7;
-      transition: opacity 0.2s ease;
-    }
-    .fullscreen-btn:hover {
-      opacity: 1;
-    }
   </style>
 </head>
-<body>
+<body class="hide-cursor">
   <div class="clock" id="clock"></div>
   <div class="date" id="date"></div>
   <div class="progress-container">
-    <div class="progress" id="dayProgressBar">
-      <div class="progress-bar" id="dayProgress"></div>
-    </div>
-    <div class="progress" id="yearProgressBar">
-      <div class="progress-bar" id="yearProgress"></div>
-    </div>
+    <div class="progress"><div class="progress-bar" id="dayProgress"></div></div>
+    <div class="progress"><div class="progress-bar" id="yearProgress"></div></div>
   </div>
-  <button id="fsBtn" class="fullscreen-btn" aria-label="Toggle fullscreen">⛶</button>
+  <div class="makassar-clock" id="makassarClock"></div>
 
   <script>
     function updateClock() {
       const now = new Date();
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const seconds = String(now.getSeconds()).padStart(2, '0');
-      document.getElementById("clock").textContent = `${hours}:${minutes}:${seconds}`;
-
-      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-      document.getElementById("date").textContent = now.toLocaleDateString(undefined, options);
-
-      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const endOfDay = new Date(startOfDay);
-      endOfDay.setDate(endOfDay.getDate() + 1);
-      const dayProgressValue = (now - startOfDay) / (endOfDay - startOfDay) * 100;
-      document.getElementById("dayProgress").style.width = `${dayProgressValue}%`;
-
-      const startOfYear = new Date(now.getFullYear(), 0, 1);
-      const endOfYear = new Date(now.getFullYear() + 1, 0, 1);
-      const yearProgressValue = (now - startOfYear) / (endOfYear - startOfYear) * 100;
-      document.getElementById("yearProgress").style.width = `${yearProgressValue}%`;
+      // Main clock
+      const hh = String(now.getHours()).padStart(2,'0');
+      const mm = String(now.getMinutes()).padStart(2,'0');
+      const ss = String(now.getSeconds()).padStart(2,'0');
+      document.getElementById('clock').textContent = `${hh}:${mm}:${ss}`;
+      // Date
+      document.getElementById('date').textContent = now.toLocaleDateString(undefined,
+        { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+      // Makassar time only
+      const makTime = now.toLocaleTimeString('en-GB',{ timeZone:'Asia/Makassar', hour12:false });
+      document.getElementById('makassarClock').textContent = makTime;
+      // Day progress
+      const startDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const endDay = new Date(startDay);
+      endDay.setDate(endDay.getDate() + 1);
+      const dayPct = ((now - startDay) / (endDay - startDay)) * 100;
+      document.getElementById('dayProgress').style.width = `${dayPct}%`;
+      // Year progress
+      const startYear = new Date(now.getFullYear(), 0, 1);
+      const endYear = new Date(now.getFullYear() + 1, 0, 1);
+      const yearPct = ((now - startYear) / (endYear - startYear)) * 100;
+      document.getElementById('yearProgress').style.width = `${yearPct}%`;
     }
+    setInterval(updateClock, 1000);
+    updateClock();
 
-    document.getElementById('fsBtn').addEventListener('click', () => {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen();
-      } else {
-        document.exitFullscreen();
+    // Fullscreen toggle on 'f'
+    document.addEventListener('keydown', e => {
+      if (e.key.toLowerCase() === 'f') {
+        if (document.fullscreenElement) document.exitFullscreen();
+        else document.documentElement.requestFullscreen();
       }
     });
 
-    setInterval(updateClock, 1000);
-    updateClock();
+    // Hide cursor after idle
+    let hideTimer;
+    const hideDelay = 3000;
+    function startHide() {
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => document.body.classList.add('hide-cursor'), hideDelay);
+    }
+    document.addEventListener('mousemove', () => {
+      document.body.classList.remove('hide-cursor');
+      startHide();
+    });
+    startHide();
   </script>
 </body>
 </html>
