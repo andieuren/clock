@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Minimalist Clock</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: white;
+      font-family: Arial, sans-serif;
+      color: black;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      text-align: center;
+    }
+    .clock {
+      font-size: 5rem;
+      font-weight: bold;
+    }
+    .date {
+      font-size: 1.5rem;
+      margin-top: 0.5rem;
+    }
+    .progress-container {
+      width: 80%;
+      margin-top: 2rem;
+    }
+    .progress {
+      height: 8px;
+      background-color: #eee;
+      border-radius: 5px;
+      overflow: hidden;
+      margin: 1rem 0;
+    }
+    .progress-bar {
+      height: 100%;
+      background-color: black;
+      width: 0%;
+    }
+  </style>
+</head>
+<body>
+  <div class="clock" id="clock"></div>
+  <div class="date" id="date"></div>
+  <div class="progress-container">
+    <div class="progress">
+      <div class="progress-bar" id="dayProgress"></div>
+    </div>
+    <div class="progress">
+      <div class="progress-bar" id="yearProgress"></div>
+    </div>
+  </div>
+
+  <script>
+    function updateClock() {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      document.getElementById("clock").textContent = `${hours}:${minutes}:${seconds}`;
+
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      document.getElementById("date").textContent = now.toLocaleDateString(undefined, options);
+
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const endOfDay = new Date(startOfDay);
+      endOfDay.setDate(endOfDay.getDate() + 1);
+      const dayProgress = (now - startOfDay) / (endOfDay - startOfDay) * 100;
+      document.getElementById("dayProgress").style.width = `${dayProgress}%`;
+
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+      const endOfYear = new Date(now.getFullYear() + 1, 0, 1);
+      const yearProgress = (now - startOfYear) / (endOfYear - startOfYear) * 100;
+      document.getElementById("yearProgress").style.width = `${yearProgress}%`;
+    }
+
+    setInterval(updateClock, 1000);
+    updateClock();
+  </script>
+</body>
+</html>
