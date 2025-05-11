@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Minimalistischer Wecker</title>
   <!-- Import Quicksand font for soft look and Roboto for clock -->
-  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <style>
     body {
       margin: 0;
-      background-color: #000;
+      background: linear-gradient(0deg, #000, #010101);
       font-family: 'Quicksand', sans-serif;
       color: #fff;
       display: flex;
@@ -20,8 +20,11 @@
       text-align: center;
       overflow: hidden;
       cursor: default;
+      transition: background 1s ease;
     }
-    body.hide-cursor { cursor: none; }
+    body.hide-cursor {
+      cursor: none;
+    }
     .clock {
       font-family: 'Roboto', sans-serif;
       font-size: 8rem;
@@ -41,71 +44,156 @@
     }
     .progress-container {
       width: 80%;
-      margin-top: 2rem;
+      margin: 2rem auto 0 auto;
+    }
+    .progress-group {
+      margin: 1rem 0;
+      width: 100%;
+      text-align: left;
+    }
+    .progress-label {
+      font-size: 1rem;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 0.2rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      text-align: left;
     }
     .progress {
+      width: 100%;
       height: 12px;
       background-color: #222;
       border-radius: 5px;
       overflow: hidden;
-      margin: 1.5rem 0;
     }
     .progress-bar {
       height: 100%;
       width: 0%;
       background-image: linear-gradient(to right, #ccc, #555);
     }
+    .mute-indicator {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 1rem;
+      color: rgba(255,255,255,0.5);
+    }
   </style>
 </head>
 <body class="hide-cursor">
+  <div class="mute-indicator" id="muteIndicator">🔊</div>
   <div class="clock" id="clock"></div>
   <div class="date" id="date"></div>
   <div class="progress-container">
-    <div class="progress"><div class="progress-bar" id="dayProgress"></div></div>
-    <div class="progress"><div class="progress-bar" id="monthProgress"></div></div>
-    <div class="progress"><div class="progress-bar" id="yearProgress"></div></div>
+    <div class="progress-group">
+      <div class="progress-label">Tag</div>
+      <div class="progress"><div class="progress-bar" id="dayProgress"></div></div>
+    </div>
+    <div class="progress-group">
+      <div class="progress-label">Monat</div>
+      <div class="progress"><div class="progress-bar" id="monthProgress"></div></div>
+    </div>
+    <div class="progress-group">
+      <div class="progress-label">Jahr</div>
+      <div class="progress"><div class="progress-bar" id="yearProgress"></div></div>
+    </div>
   </div>
   <div class="makassar-clock" id="makassarClock"></div>
 
   <script>
+    let lastChimeMinute = null;
+    let isMuted = false;
+    const muteIndicator = document.getElementById('muteIndicator');
+
+    function updateMuteIndicator() {
+      muteIndicator.textContent = isMuted ? '🔇' : '🔊';
+    }
+    updateMuteIndicator();
+
+    function playChime(count) {
+      if (isMuted) return;
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      for (let i = 0; i < count; i++) {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = 800;
+        gain.gain.value = 0.1;
+        const start = ctx.currentTime + i * 0.3;
+        osc.start(start);
+        osc.stop(start + 0.1);
+      }
+    }
+
     function updateClock() {
       const now = new Date();
+      // Background gradient angle shift hourly (5° per hour)
+      const angle = (now.getHours() * 5) % 360;
+      document.body.style.background = `linear-gradient(${angle}deg, #000, #010101)`;
+
       // Hauptuhr
       const hh = String(now.getHours()).padStart(2, '0');
       const mm = String(now.getMinutes()).padStart(2, '0');
       const ss = String(now.getSeconds()).padStart(2, '0');
       document.getElementById('clock').textContent = `${hh}:${mm}:${ss}`;
-      // Datum auf Deutsch
+
+      // Datum
       document.getElementById('date').textContent = now.toLocaleDateString('de-DE',
         { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
       // Makassar-Zeit
       const makTime = now.toLocaleTimeString('de-DE', { timeZone: 'Asia/Makassar', hour12: false });
       document.getElementById('makassarClock').textContent = makTime;
-      // Tagesfortschritt
+
+      // Fortschritt Tag
       const startDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const endDay = new Date(startDay);
       endDay.setDate(endDay.getDate() + 1);
       const dayPct = ((now - startDay) / (endDay - startDay)) * 100;
       document.getElementById('dayProgress').style.width = `${dayPct}%`;
-      // Monatsfortschritt
+
+      // Fortschritt Monat
       const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       const endMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
       const monthPct = ((now - startMonth) / (endMonth - startMonth)) * 100;
       document.getElementById('monthProgress').style.width = `${monthPct}%`;
-      // Jahresfortschritt
+
+      // Fortschritt Jahr
       const startYear = new Date(now.getFullYear(), 0, 1);
       const endYear = new Date(now.getFullYear() + 1, 0, 1);
       const yearPct = ((now - startYear) / (endYear - startYear)) * 100;
       document.getElementById('yearProgress').style.width = `${yearPct}%`;
+
+      // Heartbeat pulse on half-hour mark
+      if (now.getMinutes() === 30 && now.getSeconds() === 0) {
+        const dateEl = document.getElementById('date');
+        dateEl.style.transform = 'scale(1.02)';
+        setTimeout(() => { dateEl.style.transform = ''; }, 500);
+      }
+
+      // Chimes on quarter, half, full hour
+      if (now.getSeconds() === 0 && now.getMinutes() % 15 === 0 && lastChimeMinute !== now.getMinutes()) {
+        let count = 1;
+        if (now.getMinutes() === 0) count = 3;
+        else if (now.getMinutes() === 30) count = 2;
+        playChime(count);
+        lastChimeMinute = now.getMinutes();
+      }
     }
+
     setInterval(updateClock, 1000);
     updateClock();
 
-    // Vollbild mit Taste 'f'
+    // Vollbild mit Taste 'f', Mute mit 'm'
     document.addEventListener('keydown', e => {
       if (e.key.toLowerCase() === 'f') {
         if (document.fullscreenElement) document.exitFullscreen();
         else document.documentElement.requestFullscreen();
+      }
+      if (e.key.toLowerCase() === 'm') {
+        isMuted = !isMuted;
+        updateMuteIndicator();
       }
     });
 
@@ -116,10 +204,7 @@
       clearTimeout(hideTimer);
       hideTimer = setTimeout(() => document.body.classList.add('hide-cursor'), hideDelay);
     }
-    document.addEventListener('mousemove', () => {
-      document.body.classList.remove('hide-cursor');
-      startHide();
-    });
+    document.addEventListener('mousemove', () => { document.body.classList.remove('hide-cursor'); startHide(); });
     startHide();
   </script>
 </body>
