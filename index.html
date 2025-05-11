@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Minimalist Clock</title>
-  <!-- Import Roboto font -->
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+  <title>Minimalistischer Wecker</title>
+  <!-- Import Quicksand font for soft look and Roboto for clock -->
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
   <style>
     body {
       margin: 0;
       background-color: #000;
-      font-family: 'Roboto', sans-serif;
+      font-family: 'Quicksand', sans-serif;
       color: #fff;
       display: flex;
       flex-direction: column;
@@ -23,18 +23,21 @@
     }
     body.hide-cursor { cursor: none; }
     .clock {
+      font-family: 'Roboto', sans-serif;
       font-size: 8rem;
       font-weight: 700;
     }
     .date {
       font-size: 2rem;
       margin-top: 0.5rem;
+      text-transform: capitalize;
     }
     .makassar-clock {
       position: absolute;
       bottom: 20px;
       left: 20px;
       font-size: 1.5rem;
+      font-weight: 400;
     }
     .progress-container {
       width: 80%;
@@ -59,6 +62,7 @@
   <div class="date" id="date"></div>
   <div class="progress-container">
     <div class="progress"><div class="progress-bar" id="dayProgress"></div></div>
+    <div class="progress"><div class="progress-bar" id="monthProgress"></div></div>
     <div class="progress"><div class="progress-bar" id="yearProgress"></div></div>
   </div>
   <div class="makassar-clock" id="makassarClock"></div>
@@ -66,24 +70,29 @@
   <script>
     function updateClock() {
       const now = new Date();
-      // Main clock
-      const hh = String(now.getHours()).padStart(2,'0');
-      const mm = String(now.getMinutes()).padStart(2,'0');
-      const ss = String(now.getSeconds()).padStart(2,'0');
+      // Hauptuhr
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      const ss = String(now.getSeconds()).padStart(2, '0');
       document.getElementById('clock').textContent = `${hh}:${mm}:${ss}`;
-      // Date
-      document.getElementById('date').textContent = now.toLocaleDateString(undefined,
-        { weekday:'long', year:'numeric', month:'long', day:'numeric' });
-      // Makassar time only
-      const makTime = now.toLocaleTimeString('en-GB',{ timeZone:'Asia/Makassar', hour12:false });
+      // Datum auf Deutsch
+      document.getElementById('date').textContent = now.toLocaleDateString('de-DE',
+        { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      // Makassar-Zeit
+      const makTime = now.toLocaleTimeString('de-DE', { timeZone: 'Asia/Makassar', hour12: false });
       document.getElementById('makassarClock').textContent = makTime;
-      // Day progress
+      // Tagesfortschritt
       const startDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const endDay = new Date(startDay);
       endDay.setDate(endDay.getDate() + 1);
       const dayPct = ((now - startDay) / (endDay - startDay)) * 100;
       document.getElementById('dayProgress').style.width = `${dayPct}%`;
-      // Year progress
+      // Monatsfortschritt
+      const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const endMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      const monthPct = ((now - startMonth) / (endMonth - startMonth)) * 100;
+      document.getElementById('monthProgress').style.width = `${monthPct}%`;
+      // Jahresfortschritt
       const startYear = new Date(now.getFullYear(), 0, 1);
       const endYear = new Date(now.getFullYear() + 1, 0, 1);
       const yearPct = ((now - startYear) / (endYear - startYear)) * 100;
@@ -92,7 +101,7 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    // Fullscreen toggle on 'f'
+    // Vollbild mit Taste 'f'
     document.addEventListener('keydown', e => {
       if (e.key.toLowerCase() === 'f') {
         if (document.fullscreenElement) document.exitFullscreen();
@@ -100,7 +109,7 @@
       }
     });
 
-    // Hide cursor after idle
+    // Cursor nach Leerlauf verbergen
     let hideTimer;
     const hideDelay = 3000;
     function startHide() {
